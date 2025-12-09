@@ -2,7 +2,7 @@ from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 from transformers import AutoTokenizer, pipeline, AutoModelForCausalLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel
+from langchain_core.runnables import RunnableParallel,RunnablePassthrough, RunnableLambda
 
 MODEL_ID = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
@@ -46,13 +46,13 @@ detailed_chain = prompt1 | chat_model | parser
 
 qna_chain = prompt2 | chat_model | parser
 
-
-parallel_chain = RunnableParallel(
-    notes = detailed_chain,
-    quiz = ({"text": detailed_chain} | qna_chain)
-)
-
 merge_chain = prompt3 | chat_model | parser
+
+parallel_chain = (
+    detailed_chain | RunnableParallel(
+    notes = RunnableLambda(lambda notes: notes),
+    quiz = RunnableLambda(lambda notes: {"text" : notes}) | qna_chain
+))
 
 chain = parallel_chain | merge_chain
 
